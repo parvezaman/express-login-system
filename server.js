@@ -8,7 +8,7 @@ const bcrypt = require('bcrypt');
 const { resolveInclude } = require('ejs');
 const passport = require('passport');
 const methodOverride = require('method-override');
-const port = 5000;
+const port = process.env.PORT || 5000;
 
 const initializePassport = require('./passport.config');
 const flash = require('express-flash');
