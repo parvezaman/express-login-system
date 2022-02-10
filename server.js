@@ -7,6 +7,7 @@ const app = express();
 const bcrypt = require('bcrypt');
 const { resolveInclude } = require('ejs');
 const passport = require('passport');
+const methodOverride = require('method-override');
 const port = 5000;
 
 const initializePassport = require('./passport.config');
@@ -30,6 +31,7 @@ app.use(session({
 }))
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(methodOverride('_method'))
 
 // Home page
 app.get('/', checkAuthenticated, (req, res) => {
@@ -37,21 +39,21 @@ app.get('/', checkAuthenticated, (req, res) => {
 });
 
 // Login page
-app.get('/login', (req, res) => {
+app.get('/login', checkNotAuthenticated, (req, res) => {
     res.render('login.ejs')
 });
-app.post('/login', passport.authenticate('local', {
+app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
     successRedirect: '/',
     failureRedirect: '/login',
     failureFlash: true
 }));
 
 // register page
-app.get('/register', (req, res) => {
+app.get('/register', checkNotAuthenticated, (req, res) => {
     res.render('register.ejs')
 });
 
-app.post('/register', async (req, res) => {
+app.post('/register', checkNotAuthenticated, async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(req.body.password, 10)
         users.push({
@@ -67,12 +69,25 @@ app.post('/register', async (req, res) => {
     console.log(users)
 });
 
+// logout
+app.delete('/logout', (req, res) => {
+    req.logOut()
+    res.redirect('/login')
+})
+
 function checkAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next()
     }
 
     res.redirect('/login')
+}
+
+function checkNotAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return res.redirect('/')
+    }
+    next()
 }
 
 app.listen(port, () => {
